@@ -4,9 +4,10 @@ const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
+const dotenv = require("dotenv"); // Added dotenv
 
-const urlDev = "https://localhost:3000/";
-const urlProd = "https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
+const urlDev = process.env.REACT_APP_API_URL || "https://localhost:3000/";
+const urlProd = process.env.REACT_APP_API_URL || "https://www.contoso.com/"; //update for production
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
@@ -15,6 +16,11 @@ async function getHttpsOptions() {
 
 module.exports = async (env, options) => {
   const dev = options.mode === "development";
+
+  // Load .env file based on the environment
+  const envFile = dev ? ".env.local" : ".env.production";
+  dotenv.config({ path: envFile });
+
   const config = {
     devtool: "source-map",
     entry: {
@@ -48,6 +54,7 @@ module.exports = async (env, options) => {
         },
         {
           test: /\.(png|jpg|jpeg|ttf|woff|woff2|gif|ico)$/,
+
           type: "asset/resource",
           generator: {
             filename: "assets/[name][ext][query]",
@@ -87,6 +94,10 @@ module.exports = async (env, options) => {
       }),
       new webpack.ProvidePlugin({
         Promise: ["es6-promise", "Promise"],
+      }),
+      new webpack.DefinePlugin({
+        "process.env.REACT_APP_API_URL": JSON.stringify(process.env.REACT_APP_API_URL),
+        "process.env.REACT_APP_ENV": JSON.stringify(process.env.REACT_APP_ENV),
       }),
     ],
     devServer: {
